@@ -1,0 +1,80 @@
+# ------------------------------------------------------
+# THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
+# ------------------------------------------------------
+
+type Mutation {
+  initiateSecureSession: SessionKeyPair!
+  sendSignalingPayload(payload: String!, roomId: ID!): Boolean!
+  terminateSession(roomId: ID!): Boolean!
+  validateSessionHash(hash: String!): SessionJoinResult!
+}
+
+"""Processing state of the server-side compiled session PDF."""
+enum PdfStatus {
+  EXPIRED
+  NOT_FOUND
+  PENDING
+  READY
+}
+
+type PdfStatusResult {
+  downloadUrl: String
+  durationSeconds: Int
+  status: PdfStatus!
+  wordCount: Int
+}
+
+type Query {
+  pollPdfStatus(roomId: ID!): PdfStatusResult!
+}
+
+type SessionEventPayload {
+  connectedAt: Float!
+  roomId: ID!
+
+  """e.g. PAIRED"""
+  status: String!
+}
+
+type SessionJoinResult {
+  message: String!
+  roomId: ID
+  success: Boolean!
+}
+
+type SessionKeyPair {
+  """Unix ms timestamp at which the unclaimed room expires"""
+  expiresAt: Float!
+
+  """12-character uppercase alphanumeric access hash"""
+  hash: String!
+  roomId: ID!
+  ttlSeconds: Float!
+}
+
+type SignalingPayload {
+  """
+  Opaque JSON string containing { from, kind, data } for SDP offer/answer/ICE relay
+  """
+  payload: String!
+  roomId: ID!
+}
+
+type Subscription {
+  sessionEventConnected(roomId: ID!): SessionEventPayload!
+  signalingStream(roomId: ID!): SignalingPayload!
+  transcriptDelta(roomId: ID!): TranscriptLine!
+}
+
+type TranscriptLine {
+  isFinal: Boolean!
+
+  """
+  "Caller" or "Receiver"
+  """
+  speakerId: String!
+  textSegment: String!
+
+  """Unix millisecond timestamp"""
+  timestamp: Float!
+}

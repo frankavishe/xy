@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Project XY — Secure Video Sessions</title>
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+
+  <!-- Screen 1: The Initialization Dashboard (spec 6) -->
+  <section id="screen-dashboard" class="screen">
+    <h1 class="brand">PROJECT <span>XY</span></h1>
+    <p class="brand-sub">Ephemeral, peer-to-peer, cryptographically gated video sessions.</p>
+
+    <div class="dashboard-grid">
+      <div class="panel originator-panel">
+        <h2>Initiate Secure Feed</h2>
+        <p class="panel-hint">Generate a one-time key and share it off-band with your recipient.</p>
+        <button id="createRoomBtn" class="btn btn-primary">Create Secure Room</button>
+
+        <div id="hashDisplay" class="hash-display" hidden>
+          <span class="hash-label">Your access key</span>
+          <div class="hash-row">
+            <code id="hashText" class="hash-text"></code>
+            <button id="copyHashBtn" class="btn btn-ghost" type="button">Copy</button>
+          </div>
+          <p class="ttl-text">Expires in <span id="ttlCountdown">5:00</span> if unclaimed</p>
+          <div class="pulse-loader">
+            <span class="pulse-dot"></span> Awaiting remote connection&hellip;
+          </div>
+        </div>
+      </div>
+
+      <div class="panel receiver-panel">
+        <h2>Join Gated Feed</h2>
+        <p class="panel-hint">Enter the 12-character key you received to initialize the live feed.</p>
+        <input id="hashInput" class="hash-input" type="text" maxlength="14" placeholder="XXXX-XXXX-XXXX" autocomplete="off" />
+        <button id="joinBtn" class="btn btn-accent" disabled>Establish Connection</button>
+        <p id="joinError" class="error-text" hidden></p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Screen 2: The Active Communication Workspace (spec 6) -->
+  <section id="screen-call" class="screen" hidden>
+    <div class="call-workspace">
+      <div class="video-main">
+        <video id="remoteVideo" autoplay playsinline></video>
+        <div class="local-pip">
+          <video id="localVideo" autoplay playsinline muted></video>
+        </div>
+        <div class="call-controls">
+          <button id="toggleMicBtn" class="control-btn" type="button" title="Mute microphone">🎙️</button>
+          <button id="toggleCamBtn" class="control-btn" type="button" title="Disable camera">📷</button>
+          <button id="endSessionBtn" class="control-btn control-end" type="button">End Session</button>
+        </div>
+        <div id="callStatus" class="call-status"></div>
+      </div>
+
+      <aside class="transcript-panel">
+        <header>Live AI Telemetry Script</header>
+        <div id="transcriptLog" class="transcript-log"></div>
+      </aside>
+    </div>
+  </section>
+
+  <!-- Screen 3: Post-Session Offboarding Display (spec 6) -->
+  <section id="screen-end" class="screen" hidden>
+    <div class="success-card">
+      <h2>Cryptographic Channel Safely Destroyed.<br />Document Compiled Successfully.</h2>
+      <p id="pdfPendingText">Compiling secure transcript&hellip;</p>
+      <a id="downloadPdfBtn" class="btn btn-primary" hidden download>Download Complete PDF Transcript</a>
+      <p class="warning-text">
+        Attention: This page and its compiled records are completely ephemeral. Reloading this window
+        or waiting 15 minutes will permanently erase this file from existence.
+      </p>
+      <button id="restartBtn" class="btn btn-ghost">Start a New Session</button>
+    </div>
+  </section>
+
+  <template id="transcript-line-template">
+    <div class="transcript-line">
+      <span class="transcript-meta"><span class="transcript-time"></span> <span class="transcript-speaker"></span></span>
+      <span class="transcript-text"></span>
+    </div>
+  </template>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
