@@ -17,7 +17,7 @@ exports.AudioGateway = exports.AUDIO_WS_PORT = void 0;
 const common_1 = require("@nestjs/common");
 const websockets_1 = require("@nestjs/websockets");
 const transcription_service_1 = require("./transcription.service");
-exports.AUDIO_WS_PORT = 3001;
+exports.AUDIO_WS_PORT = Number(process.env.AUDIO_WS_PORT ?? 4001);
 let AudioGateway = AudioGateway_1 = class AudioGateway {
     constructor(transcriptionService) {
         this.transcriptionService = transcriptionService;

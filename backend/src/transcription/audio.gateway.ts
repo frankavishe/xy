@@ -8,7 +8,7 @@ interface AudioChunkPayload {
   data: string; // base64-encoded compressed audio segment
 }
 
-export const AUDIO_WS_PORT = 3001;
+export const AUDIO_WS_PORT = Number(process.env.AUDIO_WS_PORT ?? 4001);
 
 /**
  * Client->server transport for the AudioWorklet chunks (spec 3.3: 2000ms

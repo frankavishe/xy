@@ -1,7 +1,7 @@
 // Client-side half of spec 3.3: captures 2000ms PCM segments via an
 // AudioWorklet and ships them to the backend's raw audio WebSocket
 // (separate from the GraphQL endpoint — see backend/src/transcription/audio.gateway.ts).
-const AUDIO_WS_URL = `ws://${location.hostname}:3001/ws/audio`;
+const AUDIO_WS_URL = `ws://${location.hostname}:4001/ws/audio`;
 
 export class AudioTranscriber {
   constructor(roomId, speakerId) {

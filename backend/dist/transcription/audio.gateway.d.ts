@@ -4,7 +4,7 @@ interface AudioChunkPayload {
     speakerId: string;
     data: string;
 }
-export declare const AUDIO_WS_PORT = 3001;
+export declare const AUDIO_WS_PORT: number;
 export declare class AudioGateway {
     private readonly transcriptionService;
     private readonly logger;
