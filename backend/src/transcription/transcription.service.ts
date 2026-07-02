@@ -24,8 +24,8 @@ export class TranscriptionService {
     });
   }
 
-  pushAudioChunk(roomId: string, speakerId: string, chunk: Buffer): void {
-    this.provider.pushAudioChunk(roomId, speakerId, chunk);
+  pushAudioChunk(roomId: string, speakerId: string, chunk: Buffer, sampleRate: number): void {
+    this.provider.pushAudioChunk(roomId, speakerId, chunk, sampleRate);
   }
 
   stopForRoom(roomId: string): void {

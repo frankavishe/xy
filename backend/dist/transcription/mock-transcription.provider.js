@@ -51,7 +51,7 @@ let MockTranscriptionProvider = MockTranscriptionProvider_1 = class MockTranscri
         timers.intervalId = setInterval(emitNext, 4000);
         this.rooms.set(roomId, timers);
     }
-    pushAudioChunk(_roomId, _speakerId, _chunk) {
+    pushAudioChunk(_roomId, _speakerId, _chunk, _sampleRate) {
     }
     stop(roomId) {
         const timers = this.rooms.get(roomId);

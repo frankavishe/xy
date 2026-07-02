@@ -6,6 +6,7 @@ interface AudioChunkPayload {
   roomId: string;
   speakerId: string;
   data: string; // base64-encoded compressed audio segment
+  sampleRate: number; // the capturing AudioContext's native sample rate
 }
 
 export const AUDIO_WS_PORT = Number(process.env.AUDIO_WS_PORT ?? 4001);
@@ -27,6 +28,6 @@ export class AudioGateway {
   @SubscribeMessage('audio-chunk')
   handleAudioChunk(@MessageBody() body: AudioChunkPayload): void {
     const buffer = Buffer.from(body.data, 'base64');
-    this.transcriptionService.pushAudioChunk(body.roomId, body.speakerId, buffer);
+    this.transcriptionService.pushAudioChunk(body.roomId, body.speakerId, buffer, body.sampleRate);
   }
 }

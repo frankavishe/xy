@@ -25,7 +25,7 @@ let AudioGateway = AudioGateway_1 = class AudioGateway {
     }
     handleAudioChunk(body) {
         const buffer = Buffer.from(body.data, 'base64');
-        this.transcriptionService.pushAudioChunk(body.roomId, body.speakerId, buffer);
+        this.transcriptionService.pushAudioChunk(body.roomId, body.speakerId, buffer, body.sampleRate);
     }
 };
 exports.AudioGateway = AudioGateway;

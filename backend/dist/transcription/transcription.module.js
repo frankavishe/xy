@@ -8,9 +8,11 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.TranscriptionModule = void 0;
 const common_1 = require("@nestjs/common");
+const config_1 = require("@nestjs/config");
 const pubsub_module_1 = require("../pubsub/pubsub.module");
 const session_module_1 = require("../session/session.module");
 const audio_gateway_1 = require("./audio.gateway");
+const deepgram_transcription_provider_1 = require("./deepgram-transcription.provider");
 const mock_transcription_provider_1 = require("./mock-transcription.provider");
 const transcription_provider_interface_1 = require("./transcription-provider.interface");
 const transcription_service_1 = require("./transcription.service");
@@ -23,7 +25,14 @@ exports.TranscriptionModule = TranscriptionModule = __decorate([
         providers: [
             transcription_service_1.TranscriptionService,
             audio_gateway_1.AudioGateway,
-            { provide: transcription_provider_interface_1.TRANSCRIPTION_PROVIDER, useClass: mock_transcription_provider_1.MockTranscriptionProvider },
+            {
+                provide: transcription_provider_interface_1.TRANSCRIPTION_PROVIDER,
+                inject: [config_1.ConfigService],
+                useFactory: (config) => {
+                    const apiKey = config.get('DEEPGRAM_API_KEY');
+                    return apiKey ? new deepgram_transcription_provider_1.DeepgramTranscriptionProvider(apiKey) : new mock_transcription_provider_1.MockTranscriptionProvider();
+                },
+            },
         ],
         exports: [transcription_service_1.TranscriptionService],
     })

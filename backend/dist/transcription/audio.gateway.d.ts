@@ -3,6 +3,7 @@ interface AudioChunkPayload {
     roomId: string;
     speakerId: string;
     data: string;
+    sampleRate: number;
 }
 export declare const AUDIO_WS_PORT: number;
 export declare class AudioGateway {

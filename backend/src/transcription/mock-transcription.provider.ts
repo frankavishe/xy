@@ -60,7 +60,7 @@ export class MockTranscriptionProvider implements TranscriptionProvider {
     this.rooms.set(roomId, timers);
   }
 
-  pushAudioChunk(_roomId: string, _speakerId: string, _chunk: Buffer): void {
+  pushAudioChunk(_roomId: string, _speakerId: string, _chunk: Buffer, _sampleRate: number): void {
     // Mock provider doesn't analyze audio — a real provider (Deepgram/Whisper)
     // would forward `chunk` to its streaming ASR socket here.
   }

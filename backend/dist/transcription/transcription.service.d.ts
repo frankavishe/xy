@@ -8,6 +8,6 @@ export declare class TranscriptionService {
     private readonly pubSub;
     constructor(provider: TranscriptionProvider, sessionService: SessionService, pubSub: PubSub);
     startForRoom(roomId: string): void;
-    pushAudioChunk(roomId: string, speakerId: string, chunk: Buffer): void;
+    pushAudioChunk(roomId: string, speakerId: string, chunk: Buffer, sampleRate: number): void;
     stopForRoom(roomId: string): void;
 }

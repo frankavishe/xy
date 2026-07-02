@@ -33,8 +33,8 @@ let TranscriptionService = class TranscriptionService {
             this.pubSub.publish(`${exports.TRANSCRIPT_DELTA}.${roomId}`, { transcriptDelta: segment });
         });
     }
-    pushAudioChunk(roomId, speakerId, chunk) {
-        this.provider.pushAudioChunk(roomId, speakerId, chunk);
+    pushAudioChunk(roomId, speakerId, chunk, sampleRate) {
+        this.provider.pushAudioChunk(roomId, speakerId, chunk, sampleRate);
     }
     stopForRoom(roomId) {
         this.provider.stop(roomId);
