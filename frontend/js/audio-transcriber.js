@@ -32,7 +32,12 @@ export class AudioTranscriber {
     this.ws.send(
       JSON.stringify({
         event: 'audio-chunk',
-        data: { roomId: this.roomId, speakerId: this.speakerId, data: base64 },
+        data: {
+          roomId: this.roomId,
+          speakerId: this.speakerId,
+          data: base64,
+          sampleRate: this.audioContext.sampleRate,
+        },
       }),
     );
   }
