@@ -8,36 +8,51 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
-var __param = (this && this.__param) || function (paramIndex, decorator) {
-    return function (target, key) { decorator(target, key, paramIndex); }
-};
 var AudioGateway_1;
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.AudioGateway = exports.AUDIO_WS_PORT = void 0;
+exports.AudioGateway = void 0;
 const common_1 = require("@nestjs/common");
-const websockets_1 = require("@nestjs/websockets");
+const ws_1 = require("ws");
 const transcription_service_1 = require("./transcription.service");
-exports.AUDIO_WS_PORT = Number(process.env.AUDIO_WS_PORT ?? 4001);
+const AUDIO_WS_PATH = '/ws/audio';
 let AudioGateway = AudioGateway_1 = class AudioGateway {
     constructor(transcriptionService) {
         this.transcriptionService = transcriptionService;
         this.logger = new common_1.Logger(AudioGateway_1.name);
+        this.wss = new ws_1.WebSocketServer({ noServer: true });
     }
-    handleAudioChunk(body) {
-        const buffer = Buffer.from(body.data, 'base64');
-        this.transcriptionService.pushAudioChunk(body.roomId, body.speakerId, buffer, body.sampleRate);
+    attach(httpServer) {
+        httpServer.on('upgrade', (request, socket, head) => {
+            const { pathname } = new URL(request.url ?? '', 'http://localhost');
+            if (pathname !== AUDIO_WS_PATH)
+                return;
+            this.wss.handleUpgrade(request, socket, head, (ws) => {
+                this.wss.emit('connection', ws, request);
+            });
+        });
+        this.wss.on('connection', (ws) => {
+            ws.on('message', (raw) => this.handleMessage(raw));
+            ws.on('error', (err) => this.logger.error(`Audio socket error: ${err.message}`));
+        });
+    }
+    handleMessage(raw) {
+        let message;
+        try {
+            message = JSON.parse(raw.toString());
+        }
+        catch {
+            return;
+        }
+        if (message.event !== 'audio-chunk' || !message.data)
+            return;
+        const { roomId, speakerId, data, sampleRate } = message.data;
+        const buffer = Buffer.from(data, 'base64');
+        this.transcriptionService.pushAudioChunk(roomId, speakerId, buffer, sampleRate);
     }
 };
 exports.AudioGateway = AudioGateway;
-__decorate([
-    (0, websockets_1.SubscribeMessage)('audio-chunk'),
-    __param(0, (0, websockets_1.MessageBody)()),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object]),
-    __metadata("design:returntype", void 0)
-], AudioGateway.prototype, "handleAudioChunk", null);
 exports.AudioGateway = AudioGateway = AudioGateway_1 = __decorate([
-    (0, websockets_1.WebSocketGateway)(exports.AUDIO_WS_PORT, { path: '/ws/audio' }),
+    (0, common_1.Injectable)(),
     __metadata("design:paramtypes", [transcription_service_1.TranscriptionService])
 ], AudioGateway);
 //# sourceMappingURL=audio.gateway.js.map

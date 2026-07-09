@@ -1,15 +1,10 @@
+import type { Server as HttpServer } from 'http';
 import { TranscriptionService } from './transcription.service';
-interface AudioChunkPayload {
-    roomId: string;
-    speakerId: string;
-    data: string;
-    sampleRate: number;
-}
-export declare const AUDIO_WS_PORT: number;
 export declare class AudioGateway {
     private readonly transcriptionService;
     private readonly logger;
+    private readonly wss;
     constructor(transcriptionService: TranscriptionService);
-    handleAudioChunk(body: AudioChunkPayload): void;
+    attach(httpServer: HttpServer): void;
+    private handleMessage;
 }
-export {};

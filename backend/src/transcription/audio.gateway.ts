@@ -1,5 +1,7 @@
-import { Logger } from '@nestjs/common';
-import { MessageBody, SubscribeMessage, WebSocketGateway } from '@nestjs/websockets';
+import { Injectable, Logger } from '@nestjs/common';
+import type { IncomingMessage, Server as HttpServer } from 'http';
+import type { Duplex } from 'stream';
+import { WebSocket, WebSocketServer } from 'ws';
 import { TranscriptionService } from './transcription.service';
 
 interface AudioChunkPayload {
@@ -9,25 +11,55 @@ interface AudioChunkPayload {
   sampleRate: number; // the capturing AudioContext's native sample rate
 }
 
-export const AUDIO_WS_PORT = Number(process.env.AUDIO_WS_PORT ?? 4001);
+const AUDIO_WS_PATH = '/ws/audio';
 
 /**
  * Client->server transport for the AudioWorklet chunks (spec 3.3: 2000ms
- * compressed segments). GraphQL subscriptions only push server->client, so
- * the raw audio leg rides a plain native WebSocket on its own port instead —
- * kept off Socket.IO so the frontend needs zero client libraries (spec 2.2:
- * native HTML5 / vanilla ES6+ only), and kept off the main HTTP port so its
- * upgrade handling can never race with Apollo's own graphql-ws upgrade path.
+ * compressed segments). Bound to the same HTTP port to ensure compatibility
+ * with single-port hosting environments (like Render/Railway).
+ *
+ * This deliberately does NOT use Nest's `@WebSocketGateway`/`WsAdapter`:
+ * that adapter's `upgrade` handler destroys any socket whose path it
+ * doesn't recognize, which would kill Apollo's own graphql-ws upgrade
+ * handling on `/graphql` since both ride the same shared HTTP server. So
+ * instead this attaches a plain `noServer` `ws` server and only reacts to
+ * requests for its own path, leaving anything else untouched for other
+ * `upgrade` listeners (e.g. graphql-ws) to handle.
  */
-@WebSocketGateway(AUDIO_WS_PORT, { path: '/ws/audio' })
+@Injectable()
 export class AudioGateway {
   private readonly logger = new Logger(AudioGateway.name);
+  private readonly wss = new WebSocketServer({ noServer: true });
 
   constructor(private readonly transcriptionService: TranscriptionService) {}
 
-  @SubscribeMessage('audio-chunk')
-  handleAudioChunk(@MessageBody() body: AudioChunkPayload): void {
-    const buffer = Buffer.from(body.data, 'base64');
-    this.transcriptionService.pushAudioChunk(body.roomId, body.speakerId, buffer, body.sampleRate);
+  attach(httpServer: HttpServer): void {
+    httpServer.on('upgrade', (request: IncomingMessage, socket: Duplex, head: Buffer) => {
+      const { pathname } = new URL(request.url ?? '', 'http://localhost');
+      if (pathname !== AUDIO_WS_PATH) return;
+
+      this.wss.handleUpgrade(request, socket, head, (ws) => {
+        this.wss.emit('connection', ws, request);
+      });
+    });
+
+    this.wss.on('connection', (ws: WebSocket) => {
+      ws.on('message', (raw: Buffer) => this.handleMessage(raw));
+      ws.on('error', (err: Error) => this.logger.error(`Audio socket error: ${err.message}`));
+    });
+  }
+
+  private handleMessage(raw: Buffer): void {
+    let message: { event?: string; data?: AudioChunkPayload };
+    try {
+      message = JSON.parse(raw.toString());
+    } catch {
+      return;
+    }
+    if (message.event !== 'audio-chunk' || !message.data) return;
+
+    const { roomId, speakerId, data, sampleRate } = message.data;
+    const buffer = Buffer.from(data, 'base64');
+    this.transcriptionService.pushAudioChunk(roomId, speakerId, buffer, sampleRate);
   }
 }

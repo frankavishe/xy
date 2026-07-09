@@ -1,7 +1,7 @@
 // Client-side half of spec 3.3: captures 2000ms PCM segments via an
 // AudioWorklet and ships them to the backend's raw audio WebSocket
-// (separate from the GraphQL endpoint — see backend/src/transcription/audio.gateway.ts).
-const AUDIO_WS_URL = `ws://${location.hostname}:4001/ws/audio`;
+const wsProtocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+const AUDIO_WS_URL = `${wsProtocol}//${location.host}/ws/audio`;
 
 export class AudioTranscriber {
   constructor(roomId, speakerId) {
@@ -17,6 +17,32 @@ export class AudioTranscriber {
     this.ws = new WebSocket(AUDIO_WS_URL);
 
     this.audioContext = new AudioContext();
+
+    // Attempt to resume the AudioContext immediately
+    try {
+      await this.audioContext.resume();
+    } catch (err) {
+      console.warn('Failed to resume AudioContext immediately:', err);
+    }
+
+    // Register a fallback listener to resume on user gesture if it remains suspended
+    const resumeOnGesture = async () => {
+      if (this.audioContext && this.audioContext.state === 'suspended') {
+        try {
+          await this.audioContext.resume();
+          console.log('AudioContext successfully resumed via user gesture.');
+        } catch (err) {
+          console.error('Failed to resume AudioContext on gesture:', err);
+        }
+      }
+      if (!this.audioContext || this.audioContext.state !== 'suspended') {
+        document.removeEventListener('click', resumeOnGesture);
+        document.removeEventListener('keydown', resumeOnGesture);
+      }
+    };
+    document.addEventListener('click', resumeOnGesture);
+    document.addEventListener('keydown', resumeOnGesture);
+
     await this.audioContext.audioWorklet.addModule('js/audio-worklet-processor.js');
 
     this.sourceNode = this.audioContext.createMediaStreamSource(mediaStream);
@@ -57,7 +83,12 @@ function encodePcm16Base64(float32Array) {
     const clamped = Math.max(-1, Math.min(1, float32Array[i]));
     view.setInt16(offset, clamped < 0 ? clamped * 0x8000 : clamped * 0x7fff, true);
   }
+  
+  const bytes = new Uint8Array(buffer);
   let binary = '';
-  for (const byte of new Uint8Array(buffer)) binary += String.fromCharCode(byte);
+  const chunkSize = 0xffff;
+  for (let i = 0; i < bytes.length; i += chunkSize) {
+    binary += String.fromCharCode.apply(null, bytes.subarray(i, i + chunkSize));
+  }
   return btoa(binary);
 }

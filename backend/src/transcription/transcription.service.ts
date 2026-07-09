@@ -17,7 +17,7 @@ export class TranscriptionService {
   /** Phase 3: begin streaming ASR for a freshly-paired room. Spec 3.3. */
   startForRoom(roomId: string): void {
     this.provider.start(roomId, (segment) => {
-      if (segment.isFinal) {
+      if (segment.isFinal && segment.textSegment.trim() !== '') {
         this.sessionService.appendTranscriptLine(roomId, segment);
       }
       this.pubSub.publish(`${TRANSCRIPT_DELTA}.${roomId}`, { transcriptDelta: segment });

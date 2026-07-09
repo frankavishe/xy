@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import WebSocket from 'ws';
+import { WebSocket } from 'ws';
 import { TranscriptSegmentHandler, TranscriptionProvider } from './transcription-provider.interface';
 
 const DEEPGRAM_LISTEN_URL = 'wss://api.deepgram.com/v1/listen';
@@ -82,14 +82,17 @@ export class DeepgramTranscriptionProvider implements TranscriptionProvider {
         return;
       }
 
-      const transcript = payload?.channel?.alternatives?.[0]?.transcript;
-      if (!transcript) return;
+      const transcript = payload?.channel?.alternatives?.[0]?.transcript ?? '';
+      const isFinal = Boolean(payload.is_final);
+
+      // If the transcript is empty and it's not a final result, skip it.
+      if (!transcript && !isFinal) return;
 
       handler({
         speakerId,
         timestamp: Date.now(),
         textSegment: transcript,
-        isFinal: Boolean(payload.is_final),
+        isFinal,
       });
     });
 

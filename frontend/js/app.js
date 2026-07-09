@@ -11,7 +11,8 @@ const SUB_CONNECTED = `subscription Connected($roomId: ID!) { sessionEventConnec
 const SUB_SIGNALING = `subscription Signaling($roomId: ID!) { signalingStream(roomId: $roomId) { roomId payload } }`;
 const SUB_TRANSCRIPT = `subscription Transcript($roomId: ID!) { transcriptDelta(roomId: $roomId) { speakerId timestamp textSegment isFinal } }`;
 
-const gqlClient = new GraphQLSubscriptionClient(`ws://${location.host}/graphql`);
+const wsProtocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+const gqlClient = new GraphQLSubscriptionClient(`${wsProtocol}//${location.host}/graphql`);
 
 const dom = {
   createRoomBtn: document.getElementById('createRoomBtn'),
@@ -232,19 +233,23 @@ function appendTranscriptLine({ speakerId, timestamp, textSegment, isFinal }) {
   const existingInterim = interimNodes.get(speakerId);
 
   if (!isFinal) {
-    if (existingInterim) {
-      existingInterim.querySelector('.transcript-text').textContent = textSegment;
-    } else {
-      const node = renderTranscriptNode(speakerId, timestamp, textSegment, true);
-      dom.transcriptLog.appendChild(node);
-      interimNodes.set(speakerId, node);
+    if (textSegment && textSegment.trim() !== '') {
+      if (existingInterim) {
+        existingInterim.querySelector('.transcript-text').textContent = textSegment;
+      } else {
+        const node = renderTranscriptNode(speakerId, timestamp, textSegment, true);
+        dom.transcriptLog.appendChild(node);
+        interimNodes.set(speakerId, node);
+      }
     }
   } else {
     if (existingInterim) {
       existingInterim.remove();
       interimNodes.delete(speakerId);
     }
-    dom.transcriptLog.appendChild(renderTranscriptNode(speakerId, timestamp, textSegment, false));
+    if (textSegment && textSegment.trim() !== '') {
+      dom.transcriptLog.appendChild(renderTranscriptNode(speakerId, timestamp, textSegment, false));
+    }
   }
   dom.transcriptLog.scrollTop = dom.transcriptLog.scrollHeight;
 }

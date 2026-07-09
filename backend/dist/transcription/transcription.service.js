@@ -27,7 +27,7 @@ let TranscriptionService = class TranscriptionService {
     }
     startForRoom(roomId) {
         this.provider.start(roomId, (segment) => {
-            if (segment.isFinal) {
+            if (segment.isFinal && segment.textSegment.trim() !== '') {
                 this.sessionService.appendTranscriptLine(roomId, segment);
             }
             this.pubSub.publish(`${exports.TRANSCRIPT_DELTA}.${roomId}`, { transcriptDelta: segment });
